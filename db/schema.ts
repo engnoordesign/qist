@@ -1,0 +1,5 @@
+import {sqliteTable,text,integer,index} from 'drizzle-orm/sqlite-core';
+export const buyers=sqliteTable('buyers',{id:text('id').primaryKey(),name:text('name').notNull(),phone:text('phone').notNull()});
+export const contracts=sqliteTable('contracts',{id:text('id').primaryKey(),buyerId:text('buyer_id').notNull().references(()=>buyers.id),product:text('product').notNull(),currency:text('currency').notNull(),total:integer('total').notNull(),initial:integer('initial').notNull(),months:integer('months').notNull(),period:integer('period').notNull(),start:text('start').notNull(),created:text('created').notNull()},t=>[index('idx_contracts_buyer').on(t.buyerId)]);
+export const installments=sqliteTable('installments',{id:text('id').primaryKey(),contractId:text('contract_id').notNull().references(()=>contracts.id),number:integer('number').notNull(),due:text('due').notNull(),amount:integer('amount').notNull()},t=>[index('idx_installments_contract').on(t.contractId)]);
+export const payments=sqliteTable('payments',{installmentId:text('installment_id').primaryKey().references(()=>installments.id),paidAt:text('paid_at').notNull(),receipt:text('receipt').notNull()});
