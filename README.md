@@ -3,7 +3,7 @@
 Arabic–English debt collection and installment management app.
 Current UI: charcoal/champagne luxury theme, light/dark preference, compact navigation menu.
 
-> **No login.** This version has no sign-in screen: anyone who can open the app's URL can view and change all records. Run it on your own computer or a private network only, or add authentication before putting it on the internet.
+> **Sign-in required.** Two roles: **Engineer** (full access, system settings, every manager's data) and **Manager** (only their own customers, contracts and payments). The first visit to a new database asks you to create the engineer account.
 
 ## Run the application locally
 
@@ -13,28 +13,39 @@ Requires Node.js 22.13 or newer and pnpm. From this source directory:
 pnpm install --frozen-lockfile
 pnpm run build
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_true_union_jack.sql
-```
-
-The migration command is for a NEW local database only. To load the included business data into that new database:
-
-```sh
+# optional, only into this NEW empty database: the private backup data
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file ../data/data-only.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_accounts_and_roles.sql
 pnpm start
 ```
 
-Open the local URL printed by Wrangler. Do not import data into a database that already contains these IDs. The full SQL dump and SQLite file are alternative backup formats, not additional migrations. The data-only file belongs to the separate ZIP backup and is deliberately excluded from a source-only GitHub repository.
+Open the local URL printed by Wrangler and create the engineer account. Run the migrations in order; load `data-only.sql` (if wanted) after `0000` and before `0001`, and never into a database that already contains those IDs. The full SQL dump and SQLite file in the backup are alternative backup formats, not migrations. The data file is deliberately excluded from this repository.
+
+To upgrade an existing database that already has `0000` (and data), run only `0001_accounts_and_roles.sql`.
+
+## Accounts and roles
+
+- **First run:** open the app and create the engineer account (only possible while no users exist).
+- **Engineer:** sees every manager's records, chooses the owning manager when creating a contract, and opens **System settings** (users, activity log, unassigned data).
+- **Manager:** sees and edits only their own customer list, contracts and payments. No access to settings; the API enforces this, not just the screen.
+- Records saved before accounts existed are *unassigned*: the engineer assigns them to a manager in **System settings → Data**.
+- **Print statement (PDF)** on a contract prints one A4 page: customer, manager, contract terms, totals and the full payment history (receipt and who received each payment), with signature lines.
+- **System settings → Activity log → Print** prints the filtered log (sign-ins, contracts, payments, account changes).
+- Passwords are hashed with PBKDF2-SHA256; sessions are HttpOnly cookies valid for 7 days; 5 failed sign-ins lock that username for 15 minutes.
+- Forgotten engineer password: another engineer can reset it. If none exists, delete the rows in `users` (and `sessions`) from the database and the setup screen appears again.
 
 ## Architecture
 
 - React / Vinext / TypeScript interface: `app/page.tsx`
 - Themes and responsive layout: `app/globals.css`
-- Database API: `app/api/ledger/route.ts`
+- Sign-in gate: `app/page.tsx`, `app/auth-screens.tsx`; main app: `app/ledger-app.tsx`; settings: `app/settings-view.tsx`; print layouts: `app/print-sheets.tsx`
+- APIs: `app/api/auth` (sign-in), `app/api/ledger` (records, scoped per manager), `app/api/admin` (engineer only); shared auth helpers: `lib/server.ts`
 - Date and money calculations: `lib/ledger.ts`
 - Database schema: `db/schema.ts`; migrations: `drizzle/`
 - Production hosting: Cloudflare Workers + D1 through ChatGPT Sites
 - Production site identity: `.openai/hosting.json`
 
-GitHub is source storage; pushing this project to GitHub does not deploy it or copy the live database. This is a Worker/D1 application, not a static GitHub Pages site. The app has no built-in login (the ChatGPT Sites sign-in helpers were removed). Add server-side authentication before exposing it on a public URL.
+GitHub is source storage; pushing this project to GitHub does not deploy it or copy the live database. This is a Worker/D1 application, not a static GitHub Pages site. The app has its own sign-in. Still use HTTPS when hosting it publicly.
 
 Do not publish runtime directories, secrets, or personal buyer/payment data. Keep the original Site ID only for managing the existing Site. A separate deployment needs its own platform configuration.
 
@@ -42,5 +53,5 @@ Do not publish runtime directories, secrets, or personal buyer/payment data. Kee
 
 نظام قسط لإدارة الديون والأقساط بالعربية والإنجليزية. يتضمن الوضع الداكن والفاتح والقائمة المختصرة.
 الكود موجود هنا، ونسخة البيانات الحية في مجلد data ضمن ملف ZIP. رفع الكود إلى GitHub لا ينقل البيانات ولا ينشر الموقع تلقائياً.
-هذا الإصدار بدون تسجيل دخول: أي شخص يملك رابط التطبيق يمكنه رؤية البيانات وتعديلها، لذا شغّله على جهازك أو شبكة خاصة فقط.
+يتطلب النظام تسجيل الدخول بصلاحيتين: المهندس (صلاحية كاملة وإعدادات النظام وبيانات جميع المدراء) والمدير (عملاؤه وعقوده ودفعاته فقط). عند أول تشغيل يُطلب إنشاء حساب المهندس. زر طباعة الكشف يطبع صفحة PDF واحدة تتضمن العميل والمدير وكل تفاصيل الدين وسجل الدفعات، ويمكن طباعة سجل النشاط من إعدادات النظام.
 لتشغيل نسخة محلية اتبع الأوامر أعلاه، واستورد البيانات فقط في قاعدة جديدة فارغة. لا تنشر بيانات المشترين والدفعات في مستودع عام.

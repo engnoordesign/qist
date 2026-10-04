@@ -1,5 +1,9 @@
 # Qist user manual / دليل استخدام قسط
 
+## 0. Sign in and roles / تسجيل الدخول والصلاحيات
+Sign in with the username and password your engineer created. A Manager sees only their own customers, contracts and payments. The Engineer sees all managers' data and opens System settings from the ☰ menu or the account menu to add users, reset passwords, assign old records and print the activity log. Use the account menu (your name, top corner) to change your password or sign out.
+سجّل الدخول باسم المستخدم وكلمة المرور التي أنشأها المهندس. المدير يرى عملاءه وعقوده ودفعاته فقط. المهندس يرى بيانات جميع المدراء ويفتح إعدادات النظام من القائمة ☰ أو قائمة الحساب لإضافة المستخدمين وتغيير كلمات المرور وتخصيص السجلات القديمة وطباعة سجل النشاط. استخدم قائمة الحساب (اسمك أعلى الشاشة) لتغيير كلمة المرور أو تسجيل الخروج.
+
 ## 1. Navigation / التنقل
 Use the ☰ icon to open Overview, Debt ledger, or User guide. The sun/moon switch changes light/dark mode and remembers your choice. العربية / English changes the interface language.
 استخدم أيقونة ☰ لفتح النظرة العامة أو سجل الديون أو دليل الاستخدام. يغير مفتاح الشمس والقمر الوضع الفاتح والداكن ويحفظ اختيارك. يمكنك تغيير اللغة من أعلى الشاشة.
@@ -21,8 +25,8 @@ Unpaid past due dates remain overdue. Paying the current month does not clear ol
 تبقى الأقساط السابقة غير المدفوعة متأخرة. دفع الشهر الحالي لا يلغي متأخرات الأشهر السابقة. يُحفظ تاريخ الدفع منفصلاً عن الاستحقاق. ابحث بالاسم أو الهاتف أو الرقم أو المنتج وصفِّ حسب الحالة. تبقى إجماليات الدولار والدينار منفصلة.
 
 ## 6. Export and print / التصدير والطباعة
-Export CSV downloads all plans, currencies and installment/payment details. Open a buyer plan and Print statement to print or save PDF. The built-in User guide also offers Print / Save PDF.
-يصدر CSV جميع الخطط والعملات والأقساط والدفعات. افتح خطة المشتري واطبع الكشف أو احفظه PDF. يمكنك أيضاً طباعة دليل الاستخدام من داخل النظام.
+Export CSV downloads all plans, currencies and installment/payment details. Open a buyer plan and Print statement (PDF) to print or save a one-page statement with the customer, manager, totals and full payment history. The built-in User guide also offers Print / Save PDF.
+يصدر CSV جميع الخطط والعملات والأقساط والدفعات. افتح خطة المشتري واضغط طباعة الكشف (PDF) لطباعة صفحة واحدة تتضمن العميل والمدير والإجماليات وسجل الدفعات كاملاً. يمكنك أيضاً طباعة دليل الاستخدام من داخل النظام.
 
 ## 7. Current limits / الحدود الحالية
 This version supports full installment payments. It does not include partial payments, payment reversal or contract editing. Initial payment is considered received. No interest/penalties or automatic buyer messages are added. Month-end dates adjust to the last valid day of shorter months.
