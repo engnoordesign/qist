@@ -88,7 +88,7 @@ export function SettingsView({ar, me, onPrintLog, onChanged}: {ar: boolean; me: 
       <Table><TableHeader><TableRow>{[t('Time', 'الوقت'), t('User', 'المستخدم'), t('Action', 'الإجراء'), t('Details', 'التفاصيل')].map((h, i) => <TableHead key={i}>{h}</TableHead>)}</TableRow></TableHeader>
         <TableBody>{log.slice(0, 300).map(l => <TableRow key={l.id}>
           <TableCell className="nowrap">{when(l.at)}</TableCell><TableCell>{l.user_name}</TableCell>
-          <TableCell><span className={'badge ' + (l.action === 'login_failed' ? 'overdue' : 'active')}>{ACTIONS[l.action]?.[ar ? 1 : 0] || l.action}</span></TableCell>
+          <TableCell><span className={'badge ' + (['login_failed', 'contract_deleted', 'payment_reversed'].includes(l.action) ? 'overdue' : 'active')}>{ACTIONS[l.action]?.[ar ? 1 : 0] || l.action}</span></TableCell>
           <TableCell dir="auto">{l.details || '—'}</TableCell>
         </TableRow>)}</TableBody></Table>}
       {log.length > 300 && <div className="table-foot"><span>{t('Showing 300 on screen. Print includes all', 'يُعرض 300 على الشاشة. الطباعة تشمل الكل')} {log.length}.</span></div>}

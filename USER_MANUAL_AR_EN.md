@@ -16,9 +16,15 @@ Select New plan. Choose an existing buyer, or enter a new name and optional phon
 Enter product, USD or IQD currency, overall price, initial payment already received, total months, period between installments in months, and FIRST installment due date. Term must be divisible by period: 12 months / every 2 months = 6 installments. Leave installment amount blank for automatic calculation, or enter an amount consistent with the term. The final installment adjusts to the precise remaining balance. Review the preview, then Save plan.
 أدخل المنتج والعملة والسعر والمقدمة المستلمة والمدة بالأشهر والفترة بين الأقساط وتاريخ استحقاق أول قسط. يجب أن تقبل المدة القسمة على الفترة: 12 شهراً وكل شهرين = 6 أقساط. اترك مبلغ القسط فارغاً لحسابه تلقائياً أو أدخل مبلغاً متوافقاً مع المدة. يُعدل القسط الأخير ليطابق الرصيد بدقة. راجع المعاينة ثم احفظ.
 
-## 4. Record payment / تسجيل الدفع
-Mark paid selects the unpaid installment in the current Baghdad month, or the oldest overdue installment if there is none this month. Check the buyer, amount, due date and new balance, then confirm only after receiving the money. One confirmation pays one whole installment and creates a receipt reference. Duplicate payment is blocked. Open a plan to select a different past or future installment.
-يختار تسجيل الدفع قسط الشهر الحالي غير المدفوع بتوقيت بغداد، أو أقدم قسط متأخر إن لم يوجد. تحقق من المشتري والمبلغ والتاريخ والرصيد ثم أكد بعد استلام المال. تُسدد دفعة كاملة لقسط واحد ويُنشأ رقم إيصال. يُمنع تكرار الدفع. افتح الخطة لاختيار قسط سابق أو مستقبلي محدد.
+## 4. Record full or partial payments / تسجيل الدفعات الكاملة والجزئية
+Mark paid on the ledger selects the oldest overdue installment, or this month's if none is overdue. On the plan page, use Pay / part on any month and enter the amount received. Less than the installment is saved as a partial payment; the rest stays due on that month. Each payment gets its own receipt number and records who received it. A payment can never be more than what is left on its installment.
+Undo a payment recorded by mistake with the ↶ button beside it. The amount goes back onto the installment and the balance, and the reversal stays visible in the history and activity log.
+زر «تسجيل الدفع» في السجل يختار أقدم قسط متأخر، أو قسط هذا الشهر إن لم يوجد متأخر. في صفحة الخطة استخدم «دفع / جزء» لأي شهر وأدخل المبلغ المستلم. المبلغ الأقل من القسط يُحفظ كدفعة جزئية ويبقى الباقي مستحقاً على ذلك الشهر. لكل دفعة رقم إيصال ويُسجل من استلمها. لا يمكن أن تتجاوز الدفعة المتبقي على القسط.
+ألغِ الدفعة المسجلة بالخطأ بزر ↶ بجانبها. يعود المبلغ إلى القسط والرصيد، ويبقى الإلغاء ظاهراً في السجل وسجل النشاط.
+
+## 4b. Month not paid / شهر غير مدفوع
+Use Not paid → next month on a due or overdue month that will not be paid. The month closes with whatever was paid on it, and the unpaid part is added as a new installment at the end of the schedule (same day of month, one period after the last installment), so the contract total stays complete. Undo “not paid” removes that added installment, as long as nothing has been paid on it yet.
+استخدم «غير مدفوع ← شهر جديد» على شهر مستحق أو متأخر لن يُدفع. يُغلق الشهر بما دُفع منه، ويُضاف الجزء غير المدفوع كقسط جديد في نهاية الجدول (بنفس يوم الشهر وبعد فترة واحدة من آخر قسط)، فيبقى إجمالي العقد مكتملاً. «تراجع عن غير مدفوع» يحذف القسط المضاف ما لم يُدفع منه شيء.
 
 ## 5. Tracking / المتابعة
 Unpaid past due dates remain overdue. Paying the current month does not clear older missed payments. Payment timestamps are separate from due dates. Search buyer, phone, ID or product and filter active/overdue/settled. USD and IQD totals remain separate.
@@ -28,6 +34,10 @@ Unpaid past due dates remain overdue. Paying the current month does not clear ol
 Export CSV downloads all plans, currencies and installment/payment details. Open a buyer plan and Print statement (PDF) to print or save a one-page statement with the customer, manager, totals and full payment history. The built-in User guide also offers Print / Save PDF.
 يصدر CSV جميع الخطط والعملات والأقساط والدفعات. افتح خطة المشتري واضغط طباعة الكشف (PDF) لطباعة صفحة واحدة تتضمن العميل والمدير والإجماليات وسجل الدفعات كاملاً. يمكنك أيضاً طباعة دليل الاستخدام من داخل النظام.
 
-## 7. Current limits / الحدود الحالية
-This version supports full installment payments. It does not include partial payments, payment reversal or contract editing. Initial payment is considered received. No interest/penalties or automatic buyer messages are added. Month-end dates adjust to the last valid day of shorter months.
-يدعم هذا الإصدار القسط الكامل فقط، ولا يدعم الدفعات الجزئية أو إلغاء الدفعات أو تعديل العقد. تُعد المقدمة مستلمة. لا تُضاف فوائد أو غرامات ولا تُرسل رسائل تلقائية. تُضبط تواريخ نهاية الشهر لآخر يوم صالح في الشهر الأقصر.
+## 7. Delete a contract / حذف عقد
+Open the plan and choose Delete contract. Confirm in the dialog to permanently remove the contract, its schedule and its recorded payments (print the statement first if you need a copy). Managers can delete only their own contracts; the Engineer can delete any. Each deletion is recorded in the activity log with the contract's details.
+افتح الخطة واختر حذف العقد، ثم أكد في النافذة لحذف العقد وجدوله ودفعاته المسجلة نهائياً (اطبع الكشف أولاً إذا كنت تحتاج نسخة). المدير يحذف عقوده فقط، والمهندس يحذف أي عقد. تُسجل كل عملية حذف في سجل النشاط مع تفاصيل العقد.
+
+## 8. Current limits / الحدود الحالية
+Contract terms cannot be edited after saving (delete and recreate instead). Initial payment is considered received. No interest/penalties or automatic buyer messages are added. Month-end dates adjust to the last valid day of shorter months.
+لا يمكن تعديل شروط العقد بعد الحفظ (احذفه وأنشئه من جديد). تُعد المقدمة مستلمة. لا تُضاف فوائد أو غرامات ولا تُرسل رسائل تلقائية. تُضبط تواريخ نهاية الشهر لآخر يوم صالح في الشهر الأقصر.

@@ -13,17 +13,27 @@ function SheetHead({ar, title, me}: {ar: boolean; title: string; me: Person}) {
   </div>;
 }
 
-export function ContractSheet({ar, contract: c, buyer, rows, people, me, day}: {ar: boolean; contract: any; buyer: any; rows: any[]; people: Person[]; me: Person; day: string}) {
+export function ContractSheet({ar, contract: c, buyer, rows, entries, people, me, day}: {ar: boolean; contract: any; buyer: any; rows: any[]; entries: any[]; people: Person[]; me: Person; day: string}) {
   const t = (en: string, a: string) => ar ? a : en;
   const money = (n: number) => fmtMoney(ar, n, c.currency);
   const name = (id?: string | null) => people.find(p => p.id === id)?.name || (id ? id : t('Unassigned', 'غير مخصص'));
-  const paid = rows.filter(i => i.paid_at), unpaid = rows.filter(i => !i.paid_at), late = unpaid.filter(i => i.due < day);
-  const remaining = unpaid.reduce((n, i) => n + i.amount, 0), next = unpaid[0];
+  const left = (i: any) => i.closed_at ? 0 : i.amount - (i.paid || 0);
+  const open = rows.filter(i => left(i) > 0), late = open.filter(i => i.due < day);
+  const fullyPaid = rows.filter(i => !i.closed_at && left(i) === 0).length, carried = rows.filter(i => i.closed_at).length;
+  const remaining = open.reduce((n, i) => n + left(i), 0), next = open[0];
+  const paidTotal = rows.reduce((n, i) => n + (i.paid || 0), 0);
   const status = remaining === 0 ? t('Settled', 'مسدد') : late.length ? t('Overdue', 'متأخر') : t('Active', 'نشط');
   const cols = rows.length <= 24 ? 1 : rows.length <= 60 ? 2 : 3;
   const per = Math.ceil(rows.length / cols);
   const chunks = Array.from({length: cols}, (_, k) => rows.slice(k * per, (k + 1) * per));
-  const state = (i: any) => i.paid_at ? t('Paid', 'مدفوع') : i.due < day ? t('Overdue', 'متأخر') : t('Due', 'مستحق');
+  const active = (i: any) => entries.filter(e => e.installment_id === i.id && !e.voided_at);
+  const numberOf = (id: string) => rows.find(x => x.id === id)?.number;
+  const state = (i: any) => {
+    if (i.closed_at) return `${t('Not paid', 'غير مدفوع')} → #${rows.find(x => x.carry_of === i.id)?.number ?? '?'}`;
+    if (left(i) === 0) return fmtDate(ar, i.last_paid_at);
+    if (i.paid > 0) return `${t('Partial', 'جزئي')} · ${t('left', 'متبقٍ')} ${money(left(i))}`;
+    return i.due < day ? t('Overdue', 'متأخر') : t('Due', 'مستحق');
+  };
   const field = (k: string, v: React.ReactNode) => <div className="sheet-field"><span>{k}</span><b>{v}</b></div>;
 
   return <div className={'print-sheet contract-sheet cols-' + cols} dir={ar ? 'rtl' : 'ltr'}>
@@ -37,27 +47,28 @@ export function ContractSheet({ar, contract: c, buyer, rows, people, me, day}: {
       {field(t('Overall price', 'السعر الكلي'), money(c.total))}
       {field(t('Initial payment', 'المقدمة'), money(c.initial))}
       {field(t('Financed', 'المبلغ المقسط'), money(c.total - c.initial))}
-      {field(t('Collected (incl. initial)', 'المستلم (مع المقدمة)'), money(c.total - remaining))}
+      {field(t('Paid in installments', 'المدفوع من الأقساط'), money(paidTotal))}
       {field(t('Remaining', 'المتبقي'), money(remaining))}
-      {field(t('Installments paid', 'الأقساط المدفوعة'), `${paid.length} / ${rows.length}`)}
-      {field(t('Overdue', 'المتأخر'), late.length ? `${late.length} · ${money(late.reduce((n, i) => n + i.amount, 0))}` : '—')}
-      {field(t('Next due', 'القسط القادم'), next ? `${fmtDate(ar, next.due)} · ${money(next.amount)}` : '—')}
-      {field(t('Status', 'الحالة'), status)}
+      {field(t('Installments fully paid', 'أقساط مسددة بالكامل'), `${fullyPaid} / ${rows.length}`)}
+      {field(t('Overdue', 'المتأخر'), late.length ? `${late.length} · ${money(late.reduce((n, i) => n + left(i), 0))}` : '—')}
+      {field(t('Next due', 'القسط القادم'), next ? `${fmtDate(ar, next.due)} · ${money(left(next))}` : '—')}
+      {field(t('Status', 'الحالة'), status + (carried ? ` · ${carried} ${t('carried', 'مرحّل')}` : ''))}
     </div>
     <h2 className="sheet-section">{t('Installment schedule and payment history', 'جدول الأقساط وسجل الدفعات')}</h2>
     <div className="sheet-tables">{chunks.map((list, k) => <table key={k}>
-      <thead><tr><th>#</th><th>{t('Due', 'الاستحقاق')}</th><th>{t('Amount', 'المبلغ')}</th><th>{t('Status / paid on', 'الحالة / تاريخ الدفع')}</th>{cols < 3 && <th>{t('Receipt', 'الإيصال')}</th>}{cols < 3 && <th>{t('Received by', 'المستلم')}</th>}</tr></thead>
-      <tbody>{list.map(i => <tr key={i.id} className={i.paid_at ? 'paid' : i.due < day ? 'late' : ''}>
-        <td>{i.number}</td><td>{fmtDate(ar, i.due)}</td><td className="num">{money(i.amount)}</td>
-        <td>{i.paid_at ? fmtDate(ar, i.paid_at) : state(i)}</td>
-        {cols < 3 && <td>{i.receipt || '—'}</td>}{cols < 3 && <td>{i.paid_by ? name(i.paid_by) : '—'}</td>}
+      <thead><tr><th>#</th><th>{t('Due', 'الاستحقاق')}</th><th>{t('Amount', 'المبلغ')}</th><th>{t('Paid', 'المدفوع')}</th><th>{t('Status / paid on', 'الحالة / تاريخ الدفع')}</th>{cols < 3 && <th>{t('Receipts', 'الإيصالات')}</th>}{cols < 3 && <th>{t('Received by', 'المستلم')}</th>}</tr></thead>
+      <tbody>{list.map(i => <tr key={i.id} className={i.closed_at ? 'carried' : left(i) === 0 ? 'paid' : i.due < day ? 'late' : ''}>
+        <td>{i.number}{i.carry_of && <span className="carry-mark"> ←{numberOf(i.carry_of)}</span>}</td><td>{fmtDate(ar, i.due)}</td><td className="num">{money(i.amount)}</td>
+        <td className="num">{i.paid ? money(i.paid) : '—'}</td><td>{state(i)}</td>
+        {cols < 3 && <td>{active(i).map(e => e.id).join(', ') || '—'}</td>}
+        {cols < 3 && <td>{[...new Set(active(i).map(e => name(e.paid_by)))].join(', ') || '—'}</td>}
       </tr>)}</tbody>
     </table>)}</div>
     <div className="sheet-sign">
       <div><span>{t('Manager signature', 'توقيع المدير')}</span><i/></div>
       <div><span>{t('Customer signature', 'توقيع العميل')}</span><i/></div>
     </div>
-    <p className="sheet-note">{t('Initial payment is treated as received. Amounts in', 'تُعد المقدمة مستلمة. المبالغ بعملة')} {c.currency}. {t('Dates in Baghdad time.', 'التواريخ بتوقيت بغداد.')}</p>
+    <p className="sheet-note">{t('Initial payment is treated as received. "Not paid → #n": the unpaid part of that month was moved to installment n at the end. Amounts in', 'تُعد المقدمة مستلمة. "غير مدفوع ← #n": نُقل الجزء غير المدفوع من ذلك الشهر إلى القسط n في نهاية الجدول. المبالغ بعملة')} {c.currency}. {t('Dates in Baghdad time.', 'التواريخ بتوقيت بغداد.')}</p>
   </div>;
 }
 
@@ -73,6 +84,10 @@ export const ACTIONS: Record<string, [string, string]> = {
   plan_created: ['Contract created', 'إنشاء عقد'],
   payment_recorded: ['Payment recorded', 'تسجيل دفعة'],
   data_assigned: ['Customers assigned', 'تخصيص العملاء'],
+  contract_deleted: ['Contract deleted', 'حذف عقد'],
+  payment_reversed: ['Payment reversed', 'إلغاء دفعة'],
+  installment_carried: ['Month marked not paid', 'شهر غير مدفوع'],
+  installment_reopened: ['“Not paid” undone', 'تراجع عن غير مدفوع'],
 };
 
 export function LogSheet({ar, entries, me, filterLabel}: {ar: boolean; entries: any[]; me: Person; filterLabel: string}) {

@@ -5,3 +5,5 @@ export function schedule(start:string,months:number,period:number,balance:number
  const n=months/period,regular=amount||Math.ceil(balance/n); if(!Number.isSafeInteger(balance)||balance<=0||!Number.isSafeInteger(regular)||regular<=0||(n-1)*regular>=balance||n*regular<balance)throw Error('Installment amount does not match the term. Use the suggested amount / مبلغ القسط لا يتوافق مع المدة');
  const [y,m,d]=start.split('-').map(Number);return Array.from({length:n},(_,i)=>{const dt=new Date(Date.UTC(y,m-1+i*period,1));dt.setUTCDate(Math.min(d,new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth()+1,0)).getUTCDate()));return {number:i+1,due:dt.toISOString().slice(0,10),amount:i===n-1?balance-regular*(n-1):regular};});
 }
+/** Due date for an installment appended after `lastDue`, keeping the plan's original day of month. */
+export function nextDue(lastDue:string,period:number,start:string){const [y,m]=lastDue.split('-').map(Number),day=Number(start.slice(8,10));const dt=new Date(Date.UTC(y,m-1+period,1));dt.setUTCDate(Math.min(day,new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth()+1,0)).getUTCDate()));return dt.toISOString().slice(0,10);}

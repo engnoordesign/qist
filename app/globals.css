@@ -94,3 +94,26 @@ h2{color:var(--ink);font-weight:500}.page-heading p{font-size:15px;color:var(--s
  .sheet-note{font-size:7.5pt;color:#555;margin-top:8px}
  .log-sheet table{font-size:8pt}.log-sheet tr{break-inside:avoid}
 }
+
+/* Contract deletion */
+.heading-actions{display:flex;gap:10px;flex-wrap:wrap}
+.danger{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:7px;white-space:nowrap;font-size:14px;font-weight:600;padding:11px 17px;background:var(--surface);border:1px solid var(--destructive);color:var(--destructive)}
+.danger:hover:not(:disabled){background:var(--late-bg)}
+.form-actions .danger{background:var(--destructive);color:var(--surface)}
+.delete-summary{margin-top:6px}.confirm-row{display:flex;gap:10px;margin-top:14px;font-size:14px;color:var(--ink)}.confirm-row input{width:18px;height:18px}
+@media print{.heading-actions{display:none}}
+@media print{body:has(.printing-sheet) [data-slot=dialog-overlay],body:has(.printing-sheet) [data-slot=dialog-content]{display:none!important}}
+
+/* Partial payments, reversal and carried months */
+.badge.partial{background:var(--gold-soft);color:var(--gold)}.badge.carried{background:var(--soft);color:var(--subtle);border:1px dashed var(--line)}
+.closed-row td{opacity:.75}.closed-row td:last-child{opacity:1}
+.carry-note{display:flex;align-items:center;gap:4px;color:var(--gold)}
+.entry-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.entry-list li{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.entry-list li.voided span{text-decoration:line-through;opacity:.6}.entry-list li.voided small{text-decoration:none}
+.icon-btn{border:1px solid var(--line);background:var(--surface);color:var(--subtle);border-radius:6px;width:28px;height:28px;display:grid;place-items:center;flex-shrink:0}
+.icon-btn:hover{color:var(--destructive);border-color:var(--destructive)}
+.row-actions .pay-btn{white-space:nowrap}
+.quick-amounts{display:flex;gap:10px;margin:12px 0}.quick-amounts .secondary{padding:7px 12px;font-size:13px}
+.pay-grid{margin-top:16px}
+@media print{.contract-sheet tr.carried td{color:#777;font-style:italic}.carry-mark{color:#705528;font-size:.9em}}

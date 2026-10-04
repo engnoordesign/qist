@@ -16,12 +16,13 @@ node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1
 # optional, only into this NEW empty database: the private backup data
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file ../data/data-only.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_accounts_and_roles.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_partial_payments.sql
 pnpm start
 ```
 
 Open the local URL printed by Wrangler and create the engineer account. Run the migrations in order; load `data-only.sql` (if wanted) after `0000` and before `0001`, and never into a database that already contains those IDs. The full SQL dump and SQLite file in the backup are alternative backup formats, not migrations. The data file is deliberately excluded from this repository.
 
-To upgrade an existing database that already has `0000` (and data), run only `0001_accounts_and_roles.sql`.
+To upgrade an existing database, run only the migrations it does not have yet, in order (`0001_accounts_and_roles.sql`, then `0002_partial_payments.sql`). `0002` moves every existing payment into the new `payment_entries` table.
 
 ## Accounts and roles
 
@@ -30,6 +31,8 @@ To upgrade an existing database that already has `0000` (and data), run only `00
 - **Manager:** sees and edits only their own customer list, contracts and payments. No access to settings; the API enforces this, not just the screen.
 - Records saved before accounts existed are *unassigned*: the engineer assigns them to a manager in **System settings → Data**.
 - **Print statement (PDF)** on a contract prints one A4 page: customer, manager, contract terms, totals and the full payment history (receipt and who received each payment), with signature lines.
+- **Partial payments:** each month can be paid in parts (every payment has its own receipt and receiver). **Undo** reverses a payment recorded by mistake (kept in history). **Not paid → next month** closes a month with what was paid and appends the unpaid part as a new installment at the end, so the total stays complete; **Undo “not paid”** removes it while unpaid.
+- **Delete contract** (plan page) permanently removes the contract, its schedule and payments after confirmation. Managers can delete only their own contracts; engineers any. Each deletion is written to the activity log.
 - **System settings → Activity log → Print** prints the filtered log (sign-ins, contracts, payments, account changes).
 - Passwords are hashed with PBKDF2-SHA256; sessions are HttpOnly cookies valid for 7 days; 5 failed sign-ins lock that username for 15 minutes.
 - Forgotten engineer password: another engineer can reset it. If none exists, delete the rows in `users` (and `sessions`) from the database and the setup screen appears again.
