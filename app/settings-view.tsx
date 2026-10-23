@@ -1,11 +1,12 @@
 'use client';
 import {useEffect,useState} from 'react';
-import {UserPlus,KeyRound,Pencil,Printer,Search,Users,History,Database} from 'lucide-react';
+import {UserPlus,KeyRound,Pencil,Printer,Search,Users,History,Database,Mail} from 'lucide-react';
 import {Dialog,DialogContent,DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import {Select,SelectTrigger,SelectValue,SelectContent,SelectItem} from '@/components/ui/select';
 import {Table,TableHeader,TableBody,TableRow,TableHead,TableCell} from '@/components/ui/table';
 import {toast} from 'sonner';
 import {ACTIONS} from './print-sheets';
+import {EmailSettings} from './email-settings';
 
 type Admin = {users: any[]; log: any[]; unassigned: {customers: number; contracts: number}};
 
@@ -18,7 +19,7 @@ async function call(body: Record<string, unknown>) {
 
 export function SettingsView({ar, me, onPrintLog, onChanged}: {ar: boolean; me: {id: string}; onPrintLog: (entries: any[], label: string) => void; onChanged: () => void}) {
   const t = (en: string, a: string) => ar ? a : en;
-  const [tab, setTab] = useState<'users' | 'log' | 'data'>('users');
+  const [tab, setTab] = useState<'users' | 'log' | 'data' | 'email'>('users');
   const [admin, setAdmin] = useState<Admin | null>(null), [error, setError] = useState('');
   const [edit, setEdit] = useState<any>(null), [reset, setReset] = useState<any>(null), [busy, setBusy] = useState(false);
   const [logUser, setLogUser] = useState('all'), [logAction, setLogAction] = useState('all'), [q, setQ] = useState('');
@@ -52,10 +53,10 @@ export function SettingsView({ar, me, onPrintLog, onChanged}: {ar: boolean; me: 
       <p>{t('Engineer only. Manage accounts, review activity and assign records.', 'للمهندس فقط. إدارة الحسابات ومراجعة النشاط وتخصيص السجلات.')}</p>
     </div></div>
     <div className="settings-tabs" role="tablist">
-      {([['users', Users, t('Users', 'المستخدمون')], ['log', History, t('Activity log', 'سجل النشاط')], ['data', Database, t('Data', 'البيانات')]] as const).map(([k, Icon, label]) =>
+      {([['users', Users, t('Users', 'المستخدمون')], ['log', History, t('Activity log', 'سجل النشاط')], ['data', Database, t('Data', 'البيانات')], ['email', Mail, t('Email reminders', 'تذكير البريد')]] as const).map(([k, Icon, label]) =>
         <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'active' : ''} onClick={() => setTab(k)}><Icon size={16}/>{label}</button>)}
     </div>
-    {error ? <div className="empty"><p role="alert">{error}</p><button className="secondary" onClick={load}>{t('Retry', 'إعادة المحاولة')}</button></div> : !admin ? <div className="empty">{t('Loading…', 'جارٍ التحميل…')}</div> :
+    {tab === 'email' ? <EmailSettings ar={ar}/> : error ? <div className="empty"><p role="alert">{error}</p><button className="secondary" onClick={load}>{t('Retry', 'إعادة المحاولة')}</button></div> : !admin ? <div className="empty">{t('Loading…', 'جارٍ التحميل…')}</div> :
 
     tab === 'users' ? <section className="panel">
       <div className="panel-title"><div><h2>{t('User accounts', 'حسابات المستخدمين')} <span className="count">{users.length}</span></h2>
@@ -88,7 +89,7 @@ export function SettingsView({ar, me, onPrintLog, onChanged}: {ar: boolean; me: 
       <Table><TableHeader><TableRow>{[t('Time', 'الوقت'), t('User', 'المستخدم'), t('Action', 'الإجراء'), t('Details', 'التفاصيل')].map((h, i) => <TableHead key={i}>{h}</TableHead>)}</TableRow></TableHeader>
         <TableBody>{log.slice(0, 300).map(l => <TableRow key={l.id}>
           <TableCell className="nowrap">{when(l.at)}</TableCell><TableCell>{l.user_name}</TableCell>
-          <TableCell><span className={'badge ' + (['login_failed', 'contract_deleted', 'payment_reversed'].includes(l.action) ? 'overdue' : 'active')}>{ACTIONS[l.action]?.[ar ? 1 : 0] || l.action}</span></TableCell>
+          <TableCell><span className={'badge ' + (['login_failed', 'contract_deleted', 'payment_reversed', 'reminder_failed'].includes(l.action) ? 'overdue' : 'active')}>{ACTIONS[l.action]?.[ar ? 1 : 0] || l.action}</span></TableCell>
           <TableCell dir="auto">{l.details || '—'}</TableCell>
         </TableRow>)}</TableBody></Table>}
       {log.length > 300 && <div className="table-foot"><span>{t('Showing 300 on screen. Print includes all', 'يُعرض 300 على الشاشة. الطباعة تشمل الكل')} {log.length}.</span></div>}

@@ -1,8 +1,14 @@
-import {nextDue,schedule} from '@/lib/ledger';
+import {nextDue,schedule,validEmail} from '@/lib/ledger';
 import {assertSameOrigin,db,fail,HttpError,json,logStatement,newId,requireUser,text,type SessionUser} from '@/lib/server';
 
 const fmt = (units: number, currency: string) => (currency === 'USD' ? (units / 100).toFixed(2) : String(units)) + ' ' + currency;
 const ACTIVE_PAID = '(SELECT COALESCE(SUM(e.amount),0) FROM payment_entries e WHERE e.installment_id=i.id AND e.voided_at IS NULL)';
+
+const emailOf = (v: unknown) => {
+const s = typeof v === 'string' ? v.trim().toLowerCase() : '';
+if (s && !validEmail(s)) throw new HttpError(400, 'Invalid email address / البريد الإلكتروني غير صالح');
+return s || null;
+};
 
 type Inst = {id: string; number: number; amount: number; due: string; contract_id: string; closed_at: string | null; carry_of: string | null; paid: number; currency: string; period: number; start: string; owner_id: string | null};
 
@@ -23,7 +29,7 @@ export async function GET(req: Request) {
     const own = 'SELECT id FROM buyers WHERE owner_id=?1';
     const ownContracts = `SELECT id FROM contracts WHERE buyer_id IN (${own})`;
     const scope = (sql: string) => { const s = d.prepare(sql); return eng ? s : s.bind(user.id); };
-    const [buyers, contracts, installments, entries, people] = await d.batch([
+    const [buyers, contracts, installments, entries, people, reminders] = await d.batch([
       scope(`SELECT * FROM buyers ${eng ? '' : 'WHERE owner_id=?1'} ORDER BY name`),
       scope(`SELECT * FROM contracts ${eng ? '' : `WHERE buyer_id IN (${own})`} ORDER BY created DESC`),
       scope(`SELECT i.*,${ACTIVE_PAID} AS paid,(SELECT MAX(e.paid_at) FROM payment_entries e WHERE e.installment_id=i.id AND e.voided_at IS NULL) AS last_paid_at
@@ -34,8 +40,9 @@ export async function GET(req: Request) {
             OR id IN (SELECT e.paid_by FROM payment_entries e JOIN installments i ON i.id=e.installment_id WHERE i.contract_id IN (${ownContracts}))
             OR id IN (SELECT e.voided_by FROM payment_entries e JOIN installments i ON i.id=e.installment_id WHERE i.contract_id IN (${ownContracts}))
             OR id IN (SELECT i.closed_by FROM installments i WHERE i.contract_id IN (${ownContracts}))`).bind(user.id),
+scope(`SELECT r.installment_id,r.due,MAX(r.sent_at) AS sent_at FROM reminders r WHERE r.status='sent' ${eng ? '' : `AND r.installment_id IN (SELECT id FROM installments WHERE contract_id IN (${ownContracts}))`} GROUP BY r.installment_id,r.due`),
     ]);
-    return json({me: user, buyers: buyers.results, contracts: contracts.results, installments: installments.results, entries: entries.results, people: people.results});
+    return json({me: user, buyers: buyers.results, contracts: contracts.results, installments: installments.results, entries: entries.results, people: people.results, reminders: reminders.results});
   } catch (e) { return fail(e); }
 }
 
@@ -121,7 +128,18 @@ export async function POST(req: Request) {
       return json({ok: true});
     }
 
-    if (b.action === 'delete') {
+    if (b.action === 'update-buyer') {
+// Edit a customer's name, phone and email (used for reminders). Managers only edit their own customers.
+if (typeof b.id !== 'string') throw new HttpError(400, 'Invalid customer');
+const bu = await d.prepare('SELECT id,name,phone,email,owner_id FROM buyers WHERE id=?').bind(b.id).first<{id: string; name: string; phone: string; email: string | null; owner_id: string | null}>();
+if (!bu || (user.role !== 'engineer' && bu.owner_id !== user.id)) throw new HttpError(404, 'Customer not found / العميل غير موجود');
+const name = text(b.name, 120, 'customer name'), phone = String(b.phone || '').trim().slice(0, 40), email = emailOf(b.email);
+const changes = [name !== bu.name && `name → ${name}`, phone !== (bu.phone || '') && `phone → ${phone || '—'}`, email !== (bu.email || null) && `email → ${email || '—'}`].filter(Boolean).join(', ');
+await d.batch([d.prepare('UPDATE buyers SET name=?,phone=?,email=? WHERE id=?').bind(name, phone, email, bu.id), logStatement(user, 'customer_updated', `${bu.id}: ${changes || 'no change'}`)]);
+return json({ok: true});
+}
+
+if (b.action === 'delete') {
       if (typeof b.id !== 'string') throw new HttpError(400, 'Invalid contract');
       const c = await d.prepare(`SELECT c.id,c.product,c.currency,c.total,bu.name AS buyer,bu.owner_id,
           (SELECT COUNT(*) FROM installments i WHERE i.contract_id=c.id) AS n,
@@ -131,7 +149,8 @@ export async function POST(req: Request) {
       // Managers may delete only contracts in their own list; engineers may delete any.
       if (!c || (user.role !== 'engineer' && c.owner_id !== user.id)) throw new HttpError(404, 'Contract not found / العقد غير موجود');
       await d.batch([
-        d.prepare('DELETE FROM payment_entries WHERE installment_id IN (SELECT id FROM installments WHERE contract_id=?)').bind(c.id),
+        d.prepare('DELETE FROM reminders WHERE installment_id IN (SELECT id FROM installments WHERE contract_id=?)').bind(c.id),
+d.prepare('DELETE FROM payment_entries WHERE installment_id IN (SELECT id FROM installments WHERE contract_id=?)').bind(c.id),
         d.prepare('DELETE FROM installments WHERE contract_id=?').bind(c.id),
         d.prepare('DELETE FROM contracts WHERE id=?').bind(c.id),
         logStatement(user, 'contract_deleted', `${c.id} · ${c.buyer} · ${c.product} · ${fmt(c.total, c.currency)} · ${fmt(c.paid, c.currency)} paid in installments`, c.id),
@@ -171,7 +190,7 @@ export async function POST(req: Request) {
     } else {
       buyerId = newId('B');
       buyerName = text(b.name, 120, 'customer name');
-      batch.push(d.prepare('INSERT INTO buyers (id,name,phone,owner_id) VALUES (?,?,?,?)').bind(buyerId, buyerName, String(b.phone || '').slice(0, 40), ownerId));
+      batch.push(d.prepare('INSERT INTO buyers (id,name,phone,email,owner_id) VALUES (?,?,?,?,?)').bind(buyerId, buyerName, String(b.phone || '').slice(0, 40), emailOf(b.email), ownerId));
     }
     batch.push(d.prepare('INSERT INTO contracts (id,buyer_id,product,currency,total,initial,months,period,start,created,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
       .bind(id, buyerId, product, b.currency, total, initial, Number(b.months), Number(b.period), b.start, new Date().toISOString(), user.id));

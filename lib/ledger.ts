@@ -6,4 +6,6 @@ export function schedule(start:string,months:number,period:number,balance:number
  const [y,m,d]=start.split('-').map(Number);return Array.from({length:n},(_,i)=>{const dt=new Date(Date.UTC(y,m-1+i*period,1));dt.setUTCDate(Math.min(d,new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth()+1,0)).getUTCDate()));return {number:i+1,due:dt.toISOString().slice(0,10),amount:i===n-1?balance-regular*(n-1):regular};});
 }
 /** Due date for an installment appended after `lastDue`, keeping the plan's original day of month. */
+/** Simple email address check shared by the browser and the API. */
+export const validEmail=(s:string)=>s.length<=254&&/^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:.]{2,}$/.test(s);
 export function nextDue(lastDue:string,period:number,start:string){const [y,m]=lastDue.split('-').map(Number),day=Number(start.slice(8,10));const dt=new Date(Date.UTC(y,m-1+period,1));dt.setUTCDate(Math.min(day,new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth()+1,0)).getUTCDate()));return dt.toISOString().slice(0,10);}

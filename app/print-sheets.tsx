@@ -88,6 +88,10 @@ export const ACTIONS: Record<string, [string, string]> = {
   payment_reversed: ['Payment reversed', 'إلغاء دفعة'],
   installment_carried: ['Month marked not paid', 'شهر غير مدفوع'],
   installment_reopened: ['“Not paid” undone', 'تراجع عن غير مدفوع'],
+  customer_updated: ['Customer updated', 'تعديل بيانات عميل'],
+  reminder_sent: ['Reminder email sent', 'إرسال تذكير بالبريد'],
+  reminder_failed: ['Reminder email failed', 'فشل إرسال التذكير'],
+  email_settings: ['Email settings changed', 'تعديل إعدادات البريد'],
 };
 
 export function LogSheet({ar, entries, me, filterLabel}: {ar: boolean; entries: any[]; me: Person; filterLabel: string}) {

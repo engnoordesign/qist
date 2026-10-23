@@ -17,12 +17,13 @@ node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file ../data/data-only.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_accounts_and_roles.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_partial_payments.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_email_reminders.sql
 pnpm start
 ```
 
 Open the local URL printed by Wrangler and create the engineer account. Run the migrations in order; load `data-only.sql` (if wanted) after `0000` and before `0001`, and never into a database that already contains those IDs. The full SQL dump and SQLite file in the backup are alternative backup formats, not migrations. The data file is deliberately excluded from this repository.
 
-To upgrade an existing database, run only the migrations it does not have yet, in order (`0001_accounts_and_roles.sql`, then `0002_partial_payments.sql`). `0002` moves every existing payment into the new `payment_entries` table.
+To upgrade an existing database, run only the migrations it does not have yet, in order (`0001_accounts_and_roles.sql`, then `0002_partial_payments.sql`, then `0003_email_reminders.sql`). `0002` moves every existing payment into the new `payment_entries` table.
 
 ## Accounts and roles
 
@@ -36,6 +37,14 @@ To upgrade an existing database, run only the migrations it does not have yet, i
 - **System settings → Activity log → Print** prints the filtered log (sign-ins, contracts, payments, account changes).
 - Passwords are hashed with PBKDF2-SHA256; sessions are HttpOnly cookies valid for 7 days; 5 failed sign-ins lock that username for 15 minutes.
 - Forgotten engineer password: another engineer can reset it. If none exists, delete the rows in `users` (and `sessions`) from the database and the setup screen appears again.
+
+## Email payment reminders
+
+- Each customer can have an email address (new plan form, or **Edit customer** on the plan page).
+- **System settings → Email reminders** (engineer): Gmail address + Google App Password, business name, contact phone, days before the due date (default 3), optional note, test email, and a preview of the bilingual (Arabic + English) email.
+- Every unpaid installment due within the window gets **one** reminder (failed sends retry up to 3 times). Sent reminders show on the dashboard and the plan page; **Send reminder** on a plan emails the next unpaid installment immediately.
+- Reminders run automatically whenever someone opens the app (at most once an hour). For daily sending without opening the app, create a scheduler key in the same screen and set the `QIST_URL` and `QIST_REMINDER_KEY` repository secrets for `.github/workflows/reminders.yml` (daily at 09:00 Baghdad).
+- Sending uses `smtp.gmail.com:465` over Cloudflare TCP sockets (`lib/mailer.ts`); reminder logic and the email format are in `lib/reminders.ts`, the API in `app/api/reminders`.
 
 ## Architecture
 
