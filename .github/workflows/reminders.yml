@@ -1,0 +1,24 @@
+name: Qist payment reminders
+
+# Optional: sends due reminder emails every day even when nobody opens Qist.
+# Set repository secrets QIST_URL (the live site address) and QIST_REMINDER_KEY
+# (System settings → Email reminders → Automatic schedule). Without them this job does nothing.
+on:
+  schedule:
+    - cron: '0 6 * * *' # 09:00 Baghdad time
+  workflow_dispatch:
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send due reminders
+        env:
+          QIST_URL: ${{ secrets.QIST_URL }}
+          QIST_REMINDER_KEY: ${{ secrets.QIST_REMINDER_KEY }}
+        run: |
+          if [ -z "$QIST_URL" ] || [ -z "$QIST_REMINDER_KEY" ]; then
+            echo "QIST_URL / QIST_REMINDER_KEY secrets are not set; skipping."
+            exit 0
+          fi
+          curl -fsS --max-time 120 -X POST -H "X-Reminder-Key: $QIST_REMINDER_KEY" "${QIST_URL%/}/api/reminders"
